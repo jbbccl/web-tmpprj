@@ -1,18 +1,18 @@
 import os
-from fastapi import FastAPI,HTTPException,Response,Request,UploadFile,File,Form
+from fastapi import APIRouter,HTTPException,Response,Request,UploadFile,File,Form,Depends
 from fastapi.responses import FileResponse,StreamingResponse
 
 from pydantic import BaseModel
-from threading import Lock
 from  mimetypes import guess_type
-import databases.home_db
 from hashlib import md5 as hashlib_md5
 from os import makedirs,listdir,remove
-from scret import tocken
-lock=Lock()
+from sqlalchemy.orm import Session
 
-video_app = FastAPI()
-#home_app.mount("/toor", StaticFiles(directory="toor"), name="toor")
+from tmpprj.databases import home_db
+from tmpprj.databases.session import get_db
+from tmpprj.security.token import tokenCk_Pattern
+
+router = APIRouter()
 
 
 def is_video(file_path):
@@ -24,23 +24,23 @@ def file_type(file_path):
     file_mime_type = guess_type(file_path)[0]
     return str(file_mime_type)
 
-@video_app.get('/{vid}')
-async def file_all_in_one(request:Request,response: Response,vid:int):
-    res=tocken.tokenCk_Pattern(request,response)
+@router.get('/{vid}')
+async def file_all_in_one(request:Request,response: Response,vid:int,session: Session = Depends(get_db)):
+    res=tokenCk_Pattern(session, request,response)
     """ if(res==0):
         return (0,HTTPException(
                 status_code=404,
                 detail="没有token",))   """  
-    res=databases.home_db.get_video(vid)
+    res=home_db.get_video(session, vid)
     if res==0:
         return HTTPException(
                 status_code=404,
                 detail="无此视频",)
     return FileResponse(res['path']+res['v_name'],media_type=res['type'])
 
-@video_app.get("/get/{vid}")
-async def main(request: Request,vid:int):
-    res=databases.home_db.get_video(vid)
+@router.get("/get/{vid}")
+async def get_video_stream(request: Request,vid:int,session: Session = Depends(get_db)):
+    res=home_db.get_video(session, vid)
     if res==0:
         return HTTPException(
                 status_code=404,
@@ -64,9 +64,9 @@ async def main(request: Request,vid:int):
     }
     return StreamingResponse(file_like, headers=headers)
 
-@video_app.get('/get_list/{index}')
-def vid_list(index:int,l:int=3):
-    res=databases.home_db.get_video_list(index,l)
+@router.get('/get_list/{index}')
+def vid_list(index:int,l:int=3,session: Session = Depends(get_db)):
+    res=home_db.get_video_list(session, index, l)
     if(len(res)):
         return res
     return 0

@@ -48,6 +48,7 @@ services:
       SQL_USER: "${DB_USER:-dbtmp}"
       SQL_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD is not set - cp .env.example .env}"
       SQL_DB: "${DB_NAME:-dbtmp}"
+      PASSWD_SALT: "${PASSWD_SALT:?PASSWD_SALT is not set - cp .env.example .env}"
       PYTHONUNBUFFERED: "1"
     volumes:
       # 依赖装在 ./backend/.venv

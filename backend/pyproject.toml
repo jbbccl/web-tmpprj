@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tmpprj"
+version = "0.1.0"
+description = "大文件分片上传练手项目：FastAPI 后端 + Vue/Vite 前端 + MariaDB"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.115.2",
+    "uvicorn[standard]==0.32.0",
+    "pydantic==2.9.2",
+    "pydantic-settings==2.15.0",
+    "SQLAlchemy==2.0.36",
+    "alembic==1.20.0",
+    "PyMySQL==1.1.1",
+    "cryptography==43.0.3",
+    "PyJWT==2.9.0",
+    "python-multipart==0.0.12",
+    "python-dotenv==1.0.1",
+]
+
+# 依赖现在只在这一处声明（原来那份 backend/requirements.txt 已删）
+
+[tool.hatch.build.targets.wheel]
+packages = ["tmpprj"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"

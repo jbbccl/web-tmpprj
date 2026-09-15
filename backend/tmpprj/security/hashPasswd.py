@@ -1,11 +1,9 @@
 import hashlib
 
-salt='你说得对'
+from tmpprj.config import settings
+
 
 def hashPass(rowPasswd):
-    rowPasswd+=salt
-    #print(rowPasswd)
+    rowPasswd += settings.passwd_salt
     hashPasswd = hashlib.sha1(rowPasswd.encode("utf-8")).hexdigest()
-    #print(hashPasswd)
-    return hashPasswd 
-
+    return hashPasswd

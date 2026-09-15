@@ -3,5 +3,10 @@
   // 你机器上那是 3.14）→ 然后才看 venv。所以这里显式指到根目录的 .venv
   // （uv 建的 Python 3.11.16，和容器 python:3.11 对齐）。
   "python.venvPath": "${workspaceFolder}",
-  "python.venv": ".venv"
+  "python.venv": ".venv",
+
+  // tmpprj 这个包在 backend/ 下面，所以告诉 basedpyright「backend 是源码根」。
+  // 这样 `from tmpprj.databases import db` 会被当成正常的包内绝对导入来解析，
+  // 而不是之前那种「靠 sys.path 碰巧能 work」的状态。
+  "basedpyright.analysis.extraPaths": ["${workspaceFolder}/backend"]
 }
