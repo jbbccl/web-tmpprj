@@ -1,0 +1,30 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // 把整个后端跑起来。用宿主机 .venv + 容器里的数据库
+      // （db_info.py 的默认值就是 localhost:3306/dbtmp，而容器把 3306 映射出来了，
+      //   所以这里不用传任何 SQL_* 环境变量）
+      "name": "后端 uvicorn",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--host", "127.0.0.1", "--port", "8001"],
+      "cwd": "${workspaceFolder}/backend/app",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false
+    },
+    {
+      // 调试子目录里的模块（db.py / home_db.py / tocken.py）。
+      // 用 module 而不是 program，等价于 python -m；
+      // 这些文件里也有 ③ 那段兜底，所以直接右键 Run 其实也能跑。
+      "name": "调试 databases.db",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "databases.db",
+      "cwd": "${workspaceFolder}/backend/app",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "justMyCode": false
+    }
+  ]
+}

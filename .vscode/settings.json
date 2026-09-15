@@ -1,0 +1,7 @@
+{
+  // basedpyright 找解释器的顺序：python.pythonPath（默认就是 PATH 上的 "python"，
+  // 你机器上那是 3.14）→ 然后才看 venv。所以这里显式指到根目录的 .venv
+  // （uv 建的 Python 3.11.16，和容器 python:3.11 对齐）。
+  "python.venvPath": "${workspaceFolder}",
+  "python.venv": ".venv"
+}

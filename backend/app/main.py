@@ -39,7 +39,7 @@ def create_item(login: login, response: Response):
             print(login.usrname)
             if(login.passwd=='' or login.usrname==''):
                 return 401
-            id= db.dbLogin(login.usrname,login.passwd)
+            id= db.dbLogin(login.usrname,hashPasswd.hashPass(login.passwd))
             print('uid is: '+str(id))
             if(id>=0):###========登陆成功一半=========
                 #uuid_key=uuid4()

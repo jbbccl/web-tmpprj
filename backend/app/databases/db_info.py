@@ -1,8 +1,3 @@
-'''========添加引用路径========'''
-from sys import path as syspath
-from os.path import abspath 
-syspath.append(abspath('.'))
-'''============================'''
 from fastapi import Depends,FastAPI
 # 首先应该安装fastapi，sqlalchemy
 from sqlalchemy import Boolean, Column, Integer, String,DateTime,desc
@@ -24,17 +19,18 @@ SQL_USER = environ.get('SQL_USER', 'dbtmp')
 SQL_PASSWORD = environ.get('SQL_PASSWORD', 'Dst123!@#')  #明文，下面统一转义
 SQL_DB = environ.get('SQL_DB', 'dbtmp')
 
-SQLALCHEMY_DATABASE_URI:str = 'mysql+pymysql://%s:%s@%s:%s/%s' % (
-    SQL_USER, quote_plus(SQL_PASSWORD), SQL_ADDR, SQL_PORT, SQL_DB)
-engine = create_engine(SQLALCHEMY_DATABASE_URI,poolclass=QueuePool,
-                       pool_size=5,
-                       pool_timeout=30,
-                       pool_recycle=1439,
-                       echo=True)#防止断联
-                       #pool_size=3,
-                       #pool_pre_ping=True,max_overflow=5,pool_recycle=7200,pool_timeout=5)
+_base = f"mysql+pymysql://{SQL_USER}:{quote_plus(SQL_PASSWORD)}"
+SQLALCHEMY_DATABASE_URI: str = f"{_base}@{SQL_ADDR}:{SQL_PORT}/{SQL_DB}"
 
-SessionLocal = sessionmaker(autocommit=False,autoflush=True,bind=engine)
+engine = create_engine(SQLALCHEMY_DATABASE_URI,poolclass=QueuePool,
+                            pool_size=5,
+                            pool_timeout=30,
+                            pool_recycle=1439,
+                            echo=True)#防止断联
+                            #pool_size=3,
+                            #pool_pre_ping=True,max_overflow=5,pool_recycle=7200,pool_timeout=5)
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=True, bind=engine)
 
 Base = declarative_base()
 def to_dict(self):

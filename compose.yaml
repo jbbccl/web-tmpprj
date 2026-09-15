@@ -39,7 +39,9 @@ services:
     container_name: tmpprj-backend
     restart: unless-stopped
     depends_on:
-      - db
+      db:
+        # 用 db 的 healthcheck 卡住，等它真能连了再起 backend。
+        condition: service_healthy
     environment:
       SQL_ADDR: "db"
       SQL_PORT: "3306"

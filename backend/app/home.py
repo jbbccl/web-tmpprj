@@ -1,8 +1,4 @@
-'''========添加引用路径========'''
-from sys import path as syspath
-from os.path import abspath,exists
-syspath.append(abspath('.'))
-'''============================'''
+from os.path import exists
 import json
 import time
 from typing import Union

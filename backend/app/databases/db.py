@@ -1,11 +1,12 @@
 
-'''========添加引用路径========'''
-from sys import path
-from os.path import abspath 
-path.append(abspath('.'))
-'''============================'''
+# 只在“直接运行本文件”时（IDE 右键 Run / python databases/db.py）把 app 根目录
+# 加进搜索路径。用 __file__ 定位，不依赖当前工作目录；被 import 时这段不执行。
+if __name__ == "__main__":
+    import pathlib
+    import sys
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+
 from databases.db_info import *
-from scret import hashPasswd
 
 
 
@@ -54,9 +55,10 @@ def dbReg(name,passwd):
         except:
             return 0
 
-def dbLogin(name,passwd):
+def dbLogin(name,hashpasswd):
+    # 这里收的是「已经 hash 过的密码」：hash 属于安全层(scret)的事，
+    # 数据层不该管，这样 databases 也就不必反向依赖 scret 了。
     with SessionLocal() as tmpsession:
-        hashpasswd=hashPasswd.hashPass(passwd)
         print('==========++++++++===========')
         q_user = tmpsession.query(usrs).filter(and_(usrs.name==name,usrs.passwd==hashpasswd)).first()
 
@@ -124,7 +126,9 @@ def 改():
 #查("""1"'\\u4e16 or 1=1#""")
 #checkNameRep('超级大便人')
 #checkNameRep('超级大便')
-#dbLogin('111','111111')
-#res=dbReg('超级大便人','asdhquwhdpiohjpiohasdfhphjqwpiodhj')
+#注意：dbLogin 现在收的是「已经 hash 过」的值，调试时要自己先 hash
+#from scret import hashPasswd
+#dbLogin('111',hashPasswd.hashPass('111111'))
+#res=dbReg('超级大便人',hashPasswd.hashPass('111111'))
 #print(res)
 #dbSessFin(3)

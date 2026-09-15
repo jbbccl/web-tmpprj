@@ -3,11 +3,12 @@ from datetime import datetime,timedelta
 from uuid import uuid4
 from fastapi import Request,Response
 
-'''========添加引用路径========'''
-from sys import path
-from os.path import abspath 
-path.append(abspath('.'))
-'''============================'''
+# 只在“直接运行本文件”时把 app 根目录加进搜索路径。
+# 用 __file__ 定位，不依赖当前工作目录；被 import 时这段不执行。
+if __name__ == "__main__":
+    import pathlib
+    import sys
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
 from databases import db
 

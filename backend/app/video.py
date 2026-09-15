@@ -1,9 +1,3 @@
-'''========添加引用路径========'''
-from sys import path as syspath
-from os.path import abspath,exists
-syspath.append(abspath('.'))
-'''============================'''
-
 import os
 from fastapi import FastAPI,HTTPException,Response,Request,UploadFile,File,Form
 from fastapi.responses import FileResponse,StreamingResponse

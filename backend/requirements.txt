@@ -1,10 +1,3 @@
-# 后端 app 实际 import 的三方包（从 backend/**/*.py 里扫出来的）：
-#   fastapi / pydantic / sqlalchemy / pymysql / jwt(PyJWT) / python-multipart
-# 版本对齐根目录 requirements.txt 里那份 2024-11 的冻结。
-#
-# 注意：根目录那份 requirements.txt 是整台机器 pip freeze 出来的（含 pycrypto==2.6.1、
-# pwn、librosa、numba…），跟这个 web 服务无关，而且 pycrypto 在现代 Python 上装不上，
-# 所以容器里不用它。
 fastapi==0.115.2
 uvicorn[standard]==0.32.0
 pydantic==2.9.2
