@@ -6,11 +6,12 @@ import vue from '@vitejs/plugin-vue'
 // https://vite.dev/config/
 export default defineConfig({
 server:{
-   host: '240e:464:512:2c53:9dd1:e887:521b:45b0',
+   host: true,
    port: 5509,
    proxy:{
     '/api':{
-      target: 'http://127.0.0.1:8001',
+      // 容器里由 compose 设成 http://backend:8001；本机跑还是回环地址
+      target: process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:8001',
       changeOrigin:true,
       //ws: true,
       secure: false,

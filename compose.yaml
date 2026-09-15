@@ -1,0 +1,78 @@
+# tmpprj —— FastAPI + Vue/Vite + MariaDB，用 Podman 跑
+#
+#   podman-compose up -d            # 起全部
+#   podman-compose up -d db         # 只起数据库
+#   podman-compose logs -f backend  # 看日志
+#   podman-compose down             # 停（数据留存在 dbdata 卷里）
+#   podman-compose down -v          # 停并删数据卷
+#
+# 密码/端口放在 .env（已在 .gitignore 里，不进仓库），格式参考 .env.example。
+# 注意 podman-compose 的插值只认 ${VAR}、${VAR:-默认}、${VAR-默认}、${VAR:?报错}，
+# 写成 ${VAR:默认} 会直接报 Invalid variable interpolation syntax。
+
+services:
+  db:
+    image: docker.io/library/mariadb:11
+    container_name: tmpprj-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD:-rootpass}"
+      MARIADB_DATABASE: "${DB_NAME:-dbtmp}"
+      MARIADB_USER: "${DB_USER:-dbtmp}"
+      MARIADB_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD is not set - cp .env.example .env}"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - dbdata:/var/lib/mysql
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: tmpprj-backend
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      SQL_ADDR: "db"
+      SQL_PORT: "3306"
+      SQL_USER: "${DB_USER:-dbtmp}"
+      SQL_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD is not set - cp .env.example .env}"
+      SQL_DB: "${DB_NAME:-dbtmp}"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      # 源码挂进容器：宿主机改文件，容器里 --reload 立刻生效。
+      # 依赖装在 ./backend/.venv 里（也在挂载内），所以宿主机 VSCodium 的
+      # basedpyright 能直接读到同一份 site-packages。
+      - ./backend:/app
+    ports:
+      - "${BACKEND_PORT:-8001}:8001"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: tmpprj-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      # vite.config.js 里的 /api 代理目标
+      VITE_PROXY_TARGET: "http://backend:8001"
+    volumes:
+      - ./frontend:/app
+      # 单独卷，避免用宿主机 node_modules（宿主 node 版本和容器不一样）
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "${FRONTEND_PORT:-5509}:5509"
+
+volumes:
+  dbdata:
+  frontend_node_modules:

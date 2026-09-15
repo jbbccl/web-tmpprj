@@ -1,0 +1,13 @@
+node_modules/
+**/node_modules/
+.git/
+.github/
+.venv/
+backend/.venv/
+frontend/dist/
+frontend/.vite/
+.mysql/
+__pycache__/
+**/__pycache__/
+*.pyc
+.env

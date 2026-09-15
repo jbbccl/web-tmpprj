@@ -13,10 +13,19 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
 from sqlalchemy import and_, or_,exists,not_,text
 
-#SQL_ADDR='43.128.57.171'
-#SQL_ADDR='192.168.86.131'
-SQL_ADDR='localhost'
-SQLALCHEMY_DATABASE_URI:str = 'mysql+pymysql://dbtmp:Dst123!%40#@'+SQL_ADDR+':3306/dbtmp'#192.168.86.131  43.128.57.171
+'''========数据库连接信息========
+默认值 = 原来本机跑的配置；容器里由 compose.yaml 用环境变量覆盖（SQL_ADDR=db）'''
+from os import environ
+from urllib.parse import quote_plus
+
+SQL_ADDR = environ.get('SQL_ADDR', 'localhost')     #43.128.57.171  192.168.86.131
+SQL_PORT = environ.get('SQL_PORT', '3306')
+SQL_USER = environ.get('SQL_USER', 'dbtmp')
+SQL_PASSWORD = environ.get('SQL_PASSWORD', 'Dst123!@#')  #明文，下面统一转义
+SQL_DB = environ.get('SQL_DB', 'dbtmp')
+
+SQLALCHEMY_DATABASE_URI:str = 'mysql+pymysql://%s:%s@%s:%s/%s' % (
+    SQL_USER, quote_plus(SQL_PASSWORD), SQL_ADDR, SQL_PORT, SQL_DB)
 engine = create_engine(SQLALCHEMY_DATABASE_URI,poolclass=QueuePool,
                        pool_size=5,
                        pool_timeout=30,

@@ -1,7 +1,0 @@
-debian12
-在此文件下打开两个终端模拟器，分别
-bash b.sh
-bash f.sh
-启动项目
-
-数据库配置位于backend/databases/db_info
