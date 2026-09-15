@@ -130,7 +130,9 @@ def main():
     check(f"POST /home/upload_f × {len(chunks)} 片", upload_ok)
 
     # 6. 读回调（memo）
-    st, raw = call("GET", f"/home/finish_file/{fname}", headers=auth)
+    # 带上 ?n=，和前端 auplfile.vue 里拼 URL 的方式一致
+    # （服务端已经不声明 n 了，这里顺便验证多传的查询参数会被安全忽略）
+    st, raw = call("GET", f"/home/finish_file/{fname}?n={len(chunks)}", headers=auth)
     ok = False
     try:
         d = json.loads(raw)
@@ -157,9 +159,46 @@ def main():
     st, raw = call("GET", "/logout", headers=auth)
     check("GET /logout", st == 200, f"HTTP {st} body={raw[:100]}")
 
+    # 9b. 注销后刚才那个 token 必须失效（tokenDis 把 usrs.sess 置 None，
+    #     于是 dbSessFin 查不到 key，验签那一步就该失败）
+    st, raw = call("GET", "/home/info", headers=auth)
+    check("注销后旧 token 失效（401）", st == 401 and "usr_name" not in raw, f"HTTP {st} body={raw[:100]}")
+
     # 10. 无 token 时鉴权端点应被拒
     st, raw = call("GET", "/home/info")
-    check("GET /home/info 无 token 被拒", "usr_name" not in raw, f"HTTP {st} body={raw[:100]}")
+    check("GET /home/info 无 token 被拒（401）", st == 401 and "usr_name" not in raw, f"HTTP {st} body={raw[:100]}")
+
+    # 10b. 畸形 token 必须被干净拒绝，而不是把接口搞成 500。
+    #      （以前用 get_unverified_header(token.split('.')[1]+'.骗.偷袭') 取 id，
+    #        'abc'.split('.')[1] 会抛 IndexError 且没人接 → 500）
+    st, raw = call("GET", "/home/info", headers={"token": "abc"})
+    check("畸形 token 被干净拒绝（401 而不是 500）",
+          st == 401 and "usr_name" not in raw, f"HTTP {st} body={raw[:100]}")
+
+    # 10c. 多设备：同一用户连登两次，两个 token 必须都能用。
+    #      老实现里 usrs.sess 是单列，第二次登录会把第一次那把 key 覆盖掉，
+    #      于是第一个设备立刻掉线。现在一次登录 = sessions 表里一行。
+    def _login_token():
+        _, r = call("POST", "/login", json_body={"usrname": USER, "passwd": PASSWD})
+        try:
+            return json.loads(r).get("token")
+        except Exception:
+            return None
+
+    tok_a, tok_b = _login_token(), _login_token()
+    _, ra = call("GET", "/home/info", headers={"token": tok_a or ""})
+    _, rb = call("GET", "/home/info", headers={"token": tok_b or ""})
+    check("多设备：两个 token 同时有效",
+          "usr_name" in ra and "usr_name" in rb,
+          f"A={ra[:60]} B={rb[:60]}")
+
+    # 10d. 注销其中一台，另一台必须还能用（注销只删自己那一行）
+    call("GET", "/logout", headers={"token": tok_a or ""})
+    _, ra = call("GET", "/home/info", headers={"token": tok_a or ""})
+    _, rb = call("GET", "/home/info", headers={"token": tok_b or ""})
+    check("注销一台不影响另一台",
+          "usr_name" not in ra and "usr_name" in rb,
+          f"注销后 A={ra[:60]} B={rb[:60]}")
 
     # 11. 并发登录。以前 main.py 里有个全局 Lock 把并发卡成 1（忙就回 503 并发锁），
     #     那是在绕开「模块级 Session 单例被所有请求共用」。

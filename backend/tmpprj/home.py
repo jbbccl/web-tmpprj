@@ -2,7 +2,7 @@ from os.path import exists
 import json
 import time
 # from typing import Union
-from fastapi import APIRouter,HTTPException,Response,Request,UploadFile,File,Form,Depends
+from fastapi import APIRouter,HTTPException,UploadFile,File,Form,Depends
 # from fastapi.responses import FileResponse
 
 # from pydantic import BaseModel
@@ -14,41 +14,22 @@ from sqlalchemy.orm import Session
 from tmpprj.databases import home_db
 from tmpprj.databases.session import get_db
 from tmpprj.paths import FILES_DIR, STATIC_DIR
-from tmpprj.security.token import tokenCk_Pattern
-router = APIRouter()
-
+from tmpprj.security.token import current_user
 from tmpprj.video import file_type
-
-
+# 鉴权挂在 router 上：这个 router 下所有路由（包括以后新加的）都默认要求 token，
+# 不会因为漏写而变成未授权可访问。
+router = APIRouter(dependencies=[Depends(current_user)])
 
 @router.get("/")
-def home(request: Request,response: Response, session: Session = Depends(get_db),id: int = None,):
-    res=tokenCk_Pattern(session, request,response)
-    if(res==0):
-        return (0,HTTPException(
-                status_code=404,
-                detail="没有token",))
-    uid=res['id']
-    print('uid is:'+str(uid))
+def home():
     return '你是帅哥'
 
 @router.get('/info')#token要判空!!!!
-def info(request: Request,response: Response, session: Session = Depends(get_db)): 
-    res=tokenCk_Pattern(session, request,response)
-    if(res==0):
-        return (0,HTTPException(
-                status_code=404,
-                detail="没有token",))                                    #这个判断没有作用   
-    return {'usr_name':res['usr_name'],'id':res['id']}
+def info(uinfo: dict = Depends(current_user)): 
+    return {'usr_name':uinfo['usr_name'],'id':uinfo['id']}
 
 @router.get('/finish_file/{file_name}')
-async def file_all_in_one(request:Request,response: Response,file_name:str,
-                            n:int=0,session: Session = Depends(get_db)):
-    uinfo=tokenCk_Pattern(session, request,response)
-    if(uinfo==0):
-        return HTTPException(
-                status_code=404,
-                detail="没有token",)
+async def file_all_in_one(file_name:str, uinfo: dict = Depends(current_user)):
     #=====================================#
     save_path = f"{FILES_DIR}/{uinfo['id']}/{file_name}/"
     try:
@@ -63,22 +44,13 @@ async def file_all_in_one(request:Request,response: Response,file_name:str,
 
 @router.post('/upload_f')
 async def upload_file(
-    request:Request,
-    response:Response,
-    session: Session = Depends(get_db),
+    uinfo: dict = Depends(current_user),
     blob: UploadFile =File(...),
     hash:str=Form(...),
-    start:int=Form(...),
-    end:int=Form(...),
     index:str=Form(...),
     file_name:str=Form(...)
 ):  
     #print('文件名'+file_name)
-    uinfo=tokenCk_Pattern(session, request,response)
-    if(uinfo==0):
-        return HTTPException(
-                status_code=404,
-                detail="没有token",)
     #创建路经
     save_path = f"{FILES_DIR}/{uinfo['id']}/{file_name}/"
     file_save_name=save_path+index+'__'+hash
@@ -112,12 +84,7 @@ async def upload_file(
             detail="校验成功",)
 
 @router.get('/upload_f_end/{file_name}')
-async def file_all_in_one(request:Request,response: Response,file_name:str,n:str='None',cc:int=0,session: Session = Depends(get_db)):    
-    uinfo=tokenCk_Pattern(session, request,response)
-    if(uinfo==0):
-        return HTTPException(
-                status_code=404,
-                detail="没有token",)
+async def file_all_in_one(file_name:str,n:str='None',cc:int=0,session: Session = Depends(get_db),uinfo: dict = Depends(current_user)):    
 
     save_path = f"{FILES_DIR}/{uinfo['id']}/{file_name}/"
     chunks = listdir(save_path)
@@ -165,11 +132,6 @@ async def file_all_in_one(request:Request,response: Response,file_name:str,n:str
 
     
 @router.get('/my_file')
-async def my_file(request:Request,response:Response,session: Session = Depends(get_db)):
-    uinfo=tokenCk_Pattern(session, request,response)
-    if(uinfo==0):
-        return HTTPException(
-                status_code=404,
-                detail="没有token",)
+async def my_file(session: Session = Depends(get_db),uinfo: dict = Depends(current_user)):
     uid=uinfo['id']
     return home_db.my_video(session, uid)

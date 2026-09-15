@@ -8,9 +8,12 @@ from hashlib import md5 as hashlib_md5
 from os import makedirs,listdir,remove
 from sqlalchemy.orm import Session
 
+# 注意：这个 router 故意**不**挂鉴权依赖。
+# 前端是用 <video src="/api/home/video/3"> 直接播的，浏览器为 <video> 发不出自定义请求头，
+# 一旦要求 token 头，播放会直接失败（这正是原来那段判断被注释掉的原因）。
+# 要给视频加鉴权，得先把 token 换成 cookie 或签名 URL。
 from tmpprj.databases import home_db
 from tmpprj.databases.session import get_db
-from tmpprj.security.token import tokenCk_Pattern
 
 router = APIRouter()
 
@@ -26,11 +29,7 @@ def file_type(file_path):
 
 @router.get('/{vid}')
 async def file_all_in_one(request:Request,response: Response,vid:int,session: Session = Depends(get_db)):
-    res=tokenCk_Pattern(session, request,response)
-    """ if(res==0):
-        return (0,HTTPException(
-                status_code=404,
-                detail="没有token",))   """  
+    # 这里故意不做鉴权，原因见文件开头。
     res=home_db.get_video(session, vid)
     if res==0:
         return HTTPException(

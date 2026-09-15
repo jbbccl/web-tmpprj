@@ -23,6 +23,7 @@ from tmpprj.paths import LOG_FILE, STATIC_DIR
 # 改成 APIRouter 后所有路由挂在同一个应用上，一份 /docs 就全了。
 app = FastAPI()
 app.include_router(home_router, prefix="/home")
+# app.include_router(home_router, prefix="/home", dependencies=[Depends(current_user)])
 app.include_router(video_router, prefix="/home/video")
 # staticfiles 的 mount 只能在 app 上做，所以从 home.py 挪到了这里
 app.mount("/home/toor", StaticFiles(directory=STATIC_DIR), name="toor")
@@ -90,7 +91,7 @@ def logout(request: Request,response: Response, session: Session = Depends(get_d
 
     uid=res['id']
     print('注销的id:'+str(uid))
-    res2=tokenDis(session, uid)
+    res2=tokenDis(session, res['jti'])   # 只注销这一次登录，别的设备不受影响
     if(res2==0):
         return 0
     print('成功')
