@@ -4,10 +4,12 @@ set -e
 
 cd /app
 
-# node_modules 是独立的卷，首次可能被镜像内容填充，也可能是空的
+# node_modules 是独立卷，第一次启动时是空的
 if [ ! -d node_modules/vite ]; then
-  echo "[entrypoint] 安装前端依赖（改了 package.json 后删掉卷即可重装：podman volume rm tmpprj_frontend_node_modules）"
-  npm install --no-audit --no-fund
+  echo "安装黑洞\n"
+  npm ci --no-audit --no-fund
+  npm cache clean --force
+  echo "ok\n"
 fi
 
 exec npm run dev -- --host 0.0.0.0 --port 5509
