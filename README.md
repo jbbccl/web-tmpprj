@@ -4,26 +4,12 @@ FastAPI 后端 + Vue/Vite 前端 + MariaDB。大文件分片上传练手项目�
 
 ## 配置
 
-**应用只从环境变量读配置**（`tmpprj/config.py`），不读任何文件。
-
-环境变量从哪来：
-
-| 怎么跑 | 谁把值放进去 |
-| --- | --- |
-| `podman-compose up` | compose 自己读仓库根的 `.env`，再按 `environment:` 注入容器 |
-| 本机直跑后端 | 你自己导出：`set -a && . ./.env && set +a` |
-
-所以还是要有一份仓库根的 `.env`（**已被 gitignore**）：
+应用只从环境变量读配置 `tmpprj/config.py`
+密码配置： `.env`
 
 ```bash
-cp .env.example .env      # 然后按需改里面的值
+cp .env.example .env
 ```
-
-`DB_PASSWORD` 和 `PASSWD_SALT` **在源码里没有默认值**，缺了会直接启动失败 ——
-而不是悄悄用写死在源码里的口令。
-
-⚠️ **改 `PASSWD_SALT` 会让库里所有已有账号登不上**：存的是用旧盐算出来的 hash，
-换盐等于所有人的密码都不对了。
 
 ## 用 Podman + compose 
 
@@ -36,27 +22,20 @@ podman-compose down -v
 
 ```sh
 uv venv --python 3.11 .venv
-uv pip install -e backend          # 依赖声明在 backend/pyproject.toml
+uv pip install -e backend
 
-# 跑后端（先把 .env 导出成环境变量，再跑；数据库连容器映射出来的 3306）
-set -a && . ./.env && set +a
-cd backend && ../.venv/bin/python -m uvicorn tmpprj.main:app --reload --port 8001
-
-# 回归测试（重构期间每步都跑）
+# 测试
 .venv/bin/python backend/tests/smoke.py
 ```
 
 ## 数据库迁移（Alembic）
 
-建表**不再由代码在 import 时自动做**（以前是 `Base.metadata.create_all`，
-数据库没就绪就会在 import 阶段直接崩，容器进重启循环），现在由 Alembic 管：
+以前是 `Base.metadata.create_all`，数据库没就绪就会在 import 阶段直接崩，现在由 Alembic 管：
 
 ```bash
-cd backend
-../.venv/bin/python -m alembic current                        # 当前版本
-../.venv/bin/python -m alembic upgrade head                   # 升到最新
-../.venv/bin/python -m alembic revision --autogenerate -m "说明"  # 改了模型后生成迁移
-../.venv/bin/python -m alembic downgrade -1                   # 回退一步
+.venv/bin/python -m alembic current
+.venv/bin/python -m alembic upgrade head 
+.venv/bin/python -m alembic downgrade -1 
 ```
 
 容器启动时会自动跑 `alembic upgrade head`（见 `docker-entrypoint.sh`）。
@@ -78,6 +57,3 @@ backend/
 ├── Dockerfile  docker-entrypoint.sh
 └── files/                    上传落地目录（运行时数据）
 ```
-
-VSCodium 里 basedpyright 的解释器配置在 `.vscode/settings.json`（指向 `.venv`），
-F5 的调试配置在 `.vscode/launch.json`。
