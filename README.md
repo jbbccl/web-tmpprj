@@ -30,7 +30,7 @@ uv pip install -e backend
 
 ## 数据库迁移（Alembic）
 
-以前是 `Base.metadata.create_all`，数据库没就绪就会在 import 阶段直接崩，现在由 Alembic 管：
+Alembic 管：
 
 ```bash
 .venv/bin/python -m alembic current
